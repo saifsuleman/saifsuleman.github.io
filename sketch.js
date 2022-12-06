@@ -1,116 +1,97 @@
-var fields = {
-  o: 'empty', //top 1 field
-  u: 'empty', //bottom 1 field
-  lo: 'empty', //2 field
-  lu: 'empty', //3 field
-  rm: 'empty' //5 field
-};
+const MASS_EARTH = 5.972e24
+const MASS_SUN = 1.989e30
+const RADIUS_SUN = 7e8
+const RADIUS_EARTH = 6.4e6
+const G = 6.67e-11
+const DISTANCE = 1.5e11
+
+let showTrails = false
+
+let [
+  x,
+  y,
+  vx,
+  vy
+] = [200, 200, 0, 0]
+
+const [ox, oy] = [1000, 500]
+
+const stars = []
+let trails = []
 
 function setup() {
-  createCanvas(640, 400);
-  background(0);
-  //print(fields.o,fields.u,fields.lo,fields.lu,fields.rm);
-  //print(fields.o,fields.u,fields.lo,fields.lu,fields.rm);
+  createCanvas(1920, 1080)
+  const v = Math.sqrt(G*MASS_EARTH/DISTANCE)
+  const theta = Math.atan((oy-y)/(ox-x))
+  vx = v * Math.sin(theta)
+  vy = -v * Math.cos(theta)
+  frameRate(60)
+
+  for (let i = 0; i < 1000; i++) {
+    const x = Math.random()*1920
+    const y = Math.random()*1080
+    stars.push({ x, y })
+  }
 }
 
 function draw() {
-  clearField();
-  getTime();
-  showTime();
-  frameRate(20);
-  stroke(0);
-  strokeWeight(5);
-  line(240, 0, 240, 400);
-  line(160, 0, 160, 160);
-  line(0, 160, 240, 160);
-  line(160, 80, 240, 80);
-}
+  background(0)
 
-function getTime() {
-  var hr = hour();
-  var mn = minute()/5;
+  fill(255, 255, 255)
+  stroke(255)
+  for (const { x, y } of stars) {
+    ellipse(x, y, 1,1)
+  }
 
+  const s = 0.5
+  scale(s)
+  translate(width/2, height/2)
+  
 
-  if (hr >= 12) {
-    hr -= 12; //max val of hr is 11 not 23
-  }
-  if (hr >= 5) {
-    fields.rm = 'hr';
-    hr -= 5;
-  }
-  if (hr >= 3) {
-    fields.lu = 'hr';
-    hr -= 3;
-  }
-  if (hr >= 2) {
-    fields.lo = 'hr';
-    hr -= 2;
-  }
-  if (hr >= 1) {
-    fields.o = 'hr';
-    hr -= 1;
-  }
-  if (mn >= 5) {
-    if (fields.rm == 'hr') {
-      fields.rm = 'both';
-    } else {
-      fields.rm = 'mn';
+  fill(255)
+  stroke(255)
+
+  if (showTrails) {
+    for (let i = 0; i < trails.length - 1; i++) {
+      const trail = trails[i]
+      const next = trails[i+1]
+      line(trail.x, trail.y, next.x, next.y)
     }
-    mn -= 5;
-  }
-  if (mn >= 3) {
-    if (fields.lu == 'hr') {
-      fields.lu = 'both';
-    } else {
-      fields.lu = 'mn';
-    }
-    mn -= 3;
-  }
-  if (mn >= 2) {
-    if (fields.lo == 'hr') {
-      fields.lo = 'both';
-    } else {
-      fields.lo = 'mn';
-    }
-    mn -= 2;
-  }
-  if (mn >= 1) {
-    fields.u = 'mn';
   }
 
+  fill(255, 255, 0)
+  ellipse(ox, oy, RADIUS_SUN*1e-7)
+
+  fill(0, 255, 255)
+  ellipse(x, y, RADIUS_EARTH*4e-6)
+
+  const acceleration = (G*MASS_EARTH)/(RADIUS_EARTH*RADIUS_EARTH)
+  const theta = Math.atan((oy-y)/(ox-x))
+  let ax = Math.cos(theta)*acceleration
+  let ay = Math.sin(theta)*acceleration
+
+  if (x>=ox){
+    ay*=-1
+    ax*=-1
+  }
+
+  stroke(255)
+  line(x,y,x+(ax*20),y+(ay*20))
+  stroke(255,0,255)
+  line(x,y,x+(vx*5),y+(vy*5))
+
+  vx+=ax
+  vy+=ay
+  x+=vx
+  y+=vy
+
+  if (showTrails)
+    trails.push({ x, y, time: Date.now() })
 }
 
-function clearField() {
-  fields.o = 'empty';
-  fields.u = 'empty';
-  fields.lo = 'empty';
-  fields.lu = 'empty';
-  fields.rm = 'empty';
-}
-
-function getColor(request) {
-  if (request == 'hr') {
-    return color(255, 0, 0);
-  } else if (request == 'mn') {
-    return color(0, 255, 0);
-  } else if (request == 'both') {
-    return color(0, 0, 255);
-  } else {
-    return color(255, 255, 255);
+function keyPressed() {
+  if (key == 't') {
+    showTrails = !showTrails
+    trails=[]
   }
-
-}
-
-function showTime() {
-  noStroke();
-  fill(getColor(fields.o));
-  rect(161, 0, 239, 79);
-  fill(getColor(fields.u));
-  rect(161, 81, 239, 159);
-  fill(getColor(fields.lo));
-  rect(0, 0, 159, 159);
-  fill(getColor(fields.lu));
-  rect(0, 161, 239, 400);
-  fill(getColor(fields.rm));
-  rect(241, 0, 640, 400);
 }
