@@ -1,97 +1,79 @@
-const MASS_EARTH = 5.972e24
-const MASS_SUN = 1.989e30
-const RADIUS_SUN = 7e8
-const RADIUS_EARTH = 6.4e6
-const G = 6.67e-11
-const DISTANCE = 1.5e11
+const Color = Object.freeze({
+    RED: [255, 0, 0],
+    GREEN: [0, 255, 0],
+    BLUE: [0, 0, 255],
+    YELLOW: [255, 255, 0],
+    //ORANGE: [255, 165, 0],
+})
 
-let showTrails = false
-
-let [
-  x,
-  y,
-  vx,
-  vy
-] = [200, 200, 0, 0]
-
-const [ox, oy] = [1000, 500]
-
-const stars = []
-let trails = []
+const correct = shuffleArray(Object.keys(Color));
+const guess = shuffleArray(Object.keys(Color));
+const calculateCorrect = () => correct.reduce((acc, color, i) => acc + (color === guess[i]), 0);
+let [guessN, correctN, selectedI] = [0, calculateCorrect(), null];
 
 function setup() {
-  createCanvas(1920, 1080)
-  const v = Math.sqrt(G*MASS_EARTH/DISTANCE)
-  const theta = Math.atan((oy-y)/(ox-x))
-  vx = v * Math.sin(theta)
-  vy = -v * Math.cos(theta)
-  frameRate(60)
-
-  for (let i = 0; i < 1000; i++) {
-    const x = Math.random()*1920
-    const y = Math.random()*1080
-    stars.push({ x, y })
-  }
+    createCanvas(1920, 1080)
 }
 
 function draw() {
-  background(0)
+    background(0)
 
-  fill(255, 255, 255)
-  stroke(255)
-  for (const { x, y } of stars) {
-    ellipse(x, y, 1,1)
-  }
+    guess.forEach((color, i) => {
+        drawCup(500 + i * 200, 300, color);
+    });
 
-  const s = 0.5
-  scale(s)
-  translate(width/2, height/2)
-  
-
-  fill(255)
-  stroke(255)
-
-  if (showTrails) {
-    for (let i = 0; i < trails.length - 1; i++) {
-      const trail = trails[i]
-      const next = trails[i+1]
-      line(trail.x, trail.y, next.x, next.y)
+    if (correctN != null) {
+        // render text correctN
+        fill(255);
+        textSize(32);
+        text(`Correct: ${correctN}`, 500, 500);
     }
-  }
 
-  fill(255, 255, 0)
-  ellipse(ox, oy, RADIUS_SUN*1e-7)
+    if (selectedI != null) {
+        fill(255);
+        textSize(20);
+        text("Selected", 500 + selectedI * 200, 450);
+    } else if (correctN == null) {
+        fill(255);
+        rect(700, 650, 450, 100);
+        fill(0);
+        textSize(32);
+        text("Click to confirm", 800, 700);
+    }
 
-  fill(0, 255, 255)
-  ellipse(x, y, RADIUS_EARTH*4e-6)
-
-  const acceleration = (G*MASS_EARTH)/(RADIUS_EARTH*RADIUS_EARTH)
-  const theta = Math.atan((oy-y)/(ox-x))
-  let ax = Math.cos(theta)*acceleration
-  let ay = Math.sin(theta)*acceleration
-
-  if (x>=ox){
-    ay*=-1
-    ax*=-1
-  }
-
-  stroke(255)
-  line(x,y,x+(ax*20),y+(ay*20))
-  stroke(255,0,255)
-  line(x,y,x+(vx*5),y+(vy*5))
-
-  vx+=ax
-  vy+=ay
-  x+=vx
-  y+=vy
-
-  if (showTrails)
-    trails.push({ x, y, time: Date.now() })
+    fill(255);
+    textSize(16);
+    text(`Guesses: ${guessN}`, 500, 220);
 }
 
-function keyPressed() {
-  if (key == 't') {
-    showTrails = !showTrails
-    trails=[]
-  }
+function mouseClicked() {
+    if (correctN == null && mouseY > 650 && mouseY < 750 && mouseX > 700 && mouseX < 1150) {
+        correctN = calculateCorrect();
+        guessN++;
+        return;
+    }
+
+    if (mouseY < 300 || mouseY > 400) return;
+    const i = Math.floor((mouseX - 500) / 200);
+    selectedI == null ? selectedI = i : doSwap(selectedI, i);
+}
+
+function doSwap(i, j) {
+    [guess[i], guess[j]] = [guess[j], guess[i]];
+    selectedI = correctN = null;
+}
+
+function drawCup(x, y, color) {
+    // draw a rect i guess
+    fill(...Color[color]);
+    rect(x, y, 100, 100);
+}
+
+function shuffleArray(array) {
+    array = array.slice();
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
