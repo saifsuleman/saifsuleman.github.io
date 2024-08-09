@@ -3,13 +3,16 @@ const Color = Object.freeze({
     GREEN: [0, 255, 0],
     BLUE: [0, 0, 255],
     YELLOW: [255, 255, 0],
-    //ORANGE: [255, 165, 0],
+    ORANGE: [255, 165, 0],
 })
 
-const correct = shuffleArray(Object.keys(Color));
+let correct = shuffleArray(Object.keys(Color));
 const guess = shuffleArray(Object.keys(Color));
 const calculateCorrect = () => correct.reduce((acc, color, i) => acc + (color === guess[i]), 0);
+
 let [guessN, correctN, selectedI] = [0, calculateCorrect(), null];
+let showAnswer = false;
+let cheated = false;
 
 function setup() {
     createCanvas(1920, 1080)
@@ -17,10 +20,15 @@ function setup() {
 
 function draw() {
     background(0)
-
     guess.forEach((color, i) => {
         drawCup(500 + i * 200, 300, color);
     });
+
+    if (showAnswer) {
+        correct.forEach((color, i) => {
+            drawCup(500 + i * 200, 700, color);
+        });
+    }
 
     if (correctN != null) {
         // render text correctN
@@ -43,7 +51,11 @@ function draw() {
 
     fill(255);
     textSize(16);
-    text(`Guesses: ${guessN}`, 500, 220);
+    if (cheated) {
+        text(`Guesses: You cheated`, 500, 220);
+    } else {
+        text(`Guesses: ${guessN}`, 500, 220);
+    }
 }
 
 function mouseClicked() {
@@ -55,16 +67,31 @@ function mouseClicked() {
 
     if (mouseY < 300 || mouseY > 400) return;
     const i = Math.floor((mouseX - 500) / 200);
+    if (i < 0 || i >= guess.length) return;
     selectedI == null ? selectedI = i : doSwap(selectedI, i);
 }
 
+function keyPressed() {
+    // check if 't' is clicked
+    if (keyCode == 84) {
+        showAnswer = !showAnswer;
+        cheated = true;
+    }
+}
+
 function doSwap(i, j) {
+    if (i == j) {
+        selectedI = null;
+        return;
+    }
     [guess[i], guess[j]] = [guess[j], guess[i]];
     selectedI = correctN = null;
 }
 
 function drawCup(x, y, color) {
-    // draw a rect i guess
+    if (!color) {
+        return;
+    }
     fill(...Color[color]);
     rect(x, y, 100, 100);
 }
